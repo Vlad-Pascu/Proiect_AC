@@ -554,17 +554,17 @@ namespace Sequencer
                     }
                 case 1://+2SP
                     {
-                        RegFlags.SP += 2;
+                        RegFlags.SP += 1;
                         break;
                     }
                 case 2://-2SP
                     {
-                        RegFlags.SP -= 2;
+                        RegFlags.SP -= 1;
                         break;
                     }
                 case 3://+2PC
                     {
-                        RegFlags.PC += 2;
+                        RegFlags.PC += 1;
                         break;
                     }
                 case 4://BE0->1
@@ -607,7 +607,7 @@ namespace Sequencer
                 case 12://INTa,-2SP
                     {
                         //intrerupere
-                        RegFlags.SP -= 2;
+                        RegFlags.SP -= 1;
                         break;
                     }
                 case 13:
