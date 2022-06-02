@@ -24,5 +24,7 @@ namespace Sequencer
         public static short N;
         public static short C;
         public static short V;
+        public static short BE0, BE1;
+        public static short BVI, BPO,BI;
     }
 }
