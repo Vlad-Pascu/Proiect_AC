@@ -21,10 +21,11 @@ namespace Sequencer
 
         // Flaguri
         public static short Z;
-        public static short N;
+        public static short S;
         public static short C;
         public static short V;
         public static short BE0, BE1;
         public static short BVI, BPO,BI;
+        public static short CIL, ACLOW;
     }
 }

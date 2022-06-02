@@ -19,13 +19,10 @@ namespace Sequencer
         static short SBUS, DBUS, RBUS;
         static long MAR = 0, MIR = 0;
         static int stare = 0;
-        static long mascaMEM = ((MIR & 0x0000C0000) >> 18);
-        static long mascaSuccesor = ((MIR & 0x000003800) >> 11);
-        static long mascaIndex = ((MIR & 0x000000700) >> 8);
-        static long mascaTF = ((MIR & 0x000000080) >> 7);
-        static long microAdresa = ((MIR & 0x00000007F));
+        static short index;
         static short instrCurenta;
         static short regS, regD;
+        static short F, G, TF;
         static void Main(string[] args)
         {
             switch (stare)
@@ -42,6 +39,33 @@ namespace Sequencer
                         setDBUS(MIR);
                         exALU(MIR);
                         destRBUS(MIR);
+                        exOthers(MIR);
+                        salt(MIR);
+                        setIndex(MIR);
+                        setTF(MIR);
+                        if (G != 0)
+                        {
+                            long microAdresa = ((MIR & 0x00000007F));
+                            MAR = microAdresa + index;
+                        }
+                        else
+                            MAR++;
+                        short memOperantion = (short)((MIR & 0x0000C0000) >> 18);
+                        if (memOperantion != 0)
+                            stare = 2;
+                        else
+                            stare = 0;
+                        break;
+                    }
+                case 2:
+                    {
+                        stare = 3;
+                        break;
+                    }
+                case 3:
+                    {
+                        memOp(MIR);
+                        stare = 0;
                         break;
                     }
             }
@@ -71,7 +95,7 @@ namespace Sequencer
             return clasa;
         }
 
-        public short modAdresareSursa(short instructiune)
+        public static short modAdresareSursa(short instructiune)
         {
             short index2 = 0;
             short MAS = 0;
@@ -102,7 +126,7 @@ namespace Sequencer
             }
             return index2;
         }
-        public short modAdresareDestinatie(short instructiune)
+        public static short modAdresareDestinatie(short instructiune)
         {
             short index3 = 0;
             short MAD = 0;
@@ -134,7 +158,7 @@ namespace Sequencer
             return index3;
         }
 
-        public short opcodeB1(short instructiune)
+        public static short opcodeB1(short instructiune)
         {
             short index4 = 0;
             short opB1 = (short)(instructiune & 0xF000);
@@ -143,7 +167,7 @@ namespace Sequencer
             return index4;
         }
 
-        public short opcodeB2(short instructiune)
+        public static short opcodeB2(short instructiune)
         {
             short index5 = 0;
             short opB2 = (short)(instructiune & 0x1FC0);// b12 ->b6
@@ -152,7 +176,7 @@ namespace Sequencer
             return index5;
         }
 
-        public short opcodeB3(short instructiune)
+        public static short opcodeB3(short instructiune)
         {
             short index6 = 0;
             short opB3 = (short)(instructiune & 0x1E00);//b12 ->b8
@@ -161,7 +185,7 @@ namespace Sequencer
             return index6;
         }
 
-        public short opcodeB4(short instructiune)
+        public static short opcodeB4(short instructiune)
         {
             short index7 = 0;
             short opB4 = (short)(instructiune & 0x1FFF);//b12 ->b0
@@ -591,6 +615,149 @@ namespace Sequencer
                         RegFlags.BE0 = 0;
                         RegFlags.BE1 = 0;
                         RegFlags.BI = 0;
+                        break;
+                    }
+            }
+        }
+
+        public static void salt(long microinstructiune)
+        {
+            long successor = ((microinstructiune & 0x000003800) >> 11);
+            switch (successor)
+            {
+                case 0://STEP
+                    {
+                        F = 0;
+                        break;
+                    }
+                case 1://JUMP
+                    {
+                        F = 1;
+                        break;
+                    }
+                case 2://IFACLOW
+                    {
+                        F = 0;
+                        break;
+                    }
+                case 3://IFCIL
+                    {
+                        F = 0;
+                        break;
+                    }
+                case 4://IFC
+                    {
+                        if (RegFlags.C == 1)
+                            F = 1;
+                        else
+                            F = 0;
+                        break;
+                    }
+                case 5://IFZ
+                    {
+                        if (RegFlags.Z == 1)
+                            F = 1;
+                        else
+                            F = 0;
+                        break;
+                    }
+                case 6://IFS
+                    {
+                        if (RegFlags.S == 1)
+                            F = 1;
+                        else
+                            F = 0;
+                        break;
+                    }
+                case 7://IFZ
+                    {
+                        if (RegFlags.Z == 1)
+                            F = 1;
+                        else
+                            F = 0;
+                        break;
+                    }
+            }
+            G = (short)(F ^ TF);
+        }
+
+        public static void setTF(long microinstructiune)
+        {
+            TF = (short)((microinstructiune & 0x000000080) >> 7);
+        }
+
+        public static void setIndex(long microinstructiune)
+        {
+            long mascaIndex = ((microinstructiune & 0x000000700) >> 8);
+            switch (mascaIndex)
+            {
+                case 0:
+                    {
+                        index = 0;
+                        break;
+                    }
+                case 1:
+                    {
+                        index = getClasaInstructiune(instrCurenta);
+                        break;
+                    }
+                case 2:
+                    {
+                        index = modAdresareSursa(instrCurenta);
+                        break;
+                    }
+                case 3:
+                    {
+                        index = modAdresareDestinatie(instrCurenta);
+                        break;
+                    }
+                case 4:
+                    {
+                        index = opcodeB1(instrCurenta);
+                        break;
+                    }
+                case 5:
+                    {
+                        index = opcodeB2(instrCurenta);
+                        break;
+                    }
+                case 6:
+                    {
+                        index = opcodeB3(instrCurenta);
+                        break;
+                    }
+                case 7:
+                    {
+                        index = opcodeB4(instrCurenta);
+                        break;
+                    }
+            }
+        }
+
+        public static void memOp(long microinstructiune)
+        {
+            long mascaMEM = ((MIR & 0x0000C0000) >> 18);
+            switch (mascaMEM)
+            {
+                case 0://NONE
+                    {
+                        break;
+                    }
+                case 1://IFCH
+                    {
+                        RegFlags.IR = MEM[RegFlags.ADR];
+                        instrCurenta = RegFlags.IR;
+                        setRsRd(instrCurenta);
+                        break;
+                    }
+                case 2://RD
+                    {
+                        RegFlags.MDR = MEM[RegFlags.ADR];
+                        break;
+                    }
+                case 3:
+                    {
+                        MEM[RegFlags.ADR] = RegFlags.MDR;
                         break;
                     }
             }
